@@ -1,5 +1,4 @@
 # dev-education-demos
-# Teaching Demos
 
 This repository contains a collection of **interactive demos** created for my **teaching sessions and workshops** on game development and interactive media.  
 Each demo illustrates a specific technical or creative concept — from 2D gameplay logic to 3D animation and interactivity.
