@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Phaser Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+  // --- CLASSE DE LA SCÈNE PRINCIPALE ---
+  // Une "Scene" dans Phaser représente un niveau, un écran de menu, etc.
+  class DemoScene extends Phaser.Scene {
+    constructor() {
+      super("DemoScene");
+    }
+
+    preload() {
+      // --- CHARGEMENT DES RESSOURCES ---
+      // On charge ici toutes les images, sons, etc. avant de lancer le jeu.
+
+      // Joueur
+      this.load.spritesheet('player_idle', 'assets/Main Characters/Ninja Frog/Idle (32x32).png', { frameWidth: 32, frameHeight: 32 });
+      this.load.spritesheet('player_run', 'assets/Main Characters/Ninja Frog/Run (32x32).png', { frameWidth: 32, frameHeight: 32 });
+      this.load.image('player_jump', 'assets/Main Characters/Ninja Frog/Jump (32x32).png');
+      this.load.image('player_fall', 'assets/Main Characters/Ninja Frog/Fall (32x32).png');
+
+      // Tilemap (niveau) et tileset (textures des tuiles)
+      this.load.tilemapTiledJSON('map', 'map.json');
+      this.load.image('tileset', 'assets/Terrain/Terrain (16x16).png');
+
+      // Objets ramassables
+      this.load.spritesheet('strawberry', 'assets/Items/Fruits/Strawberry.png', { frameWidth: 32, frameHeight: 32 });
+      this.load.spritesheet('melon', 'assets/Items/Fruits/Melon.png', { frameWidth: 32, frameHeight: 32 });
+
+      // Objets fixes / obstacles
+      this.load.image('spike', 'assets/Traps/Spikes/Idle.png');
+      this.load.image('goal', 'assets/Items/Checkpoints/End/End (Idle).png');
+
+      // Ennemi "Thwomp" (type Mario)
+      this.load.image('thwomp_idle', 'assets/Traps/Rock Head/Idle.png');
+      this.load.spritesheet('thwomp_blink', 'assets/Traps/Rock Head/Blink (42x42).png', { frameWidth: 42, frameHeight: 42 });
+      this.load.spritesheet('thwomp_impact', 'assets/Traps/Rock Head/Bottom Hit (42x42).png', { frameWidth: 42, frameHeight: 42 });
+
+      // Police personnalisée 
+      this.load.font('customFont', 'CaveatBrush-Regular.ttf');
+    }
+
+    create() {
+      // --- CRÉATION DU NIVEAU ---
+
+      // Chargement du tilemap et du tileset
+      const map = this.add.tilemap("map");
+      const tileset = map.addTilesetImage('tileset', 'tileset');
+      const layer = map.createLayer('Calque de Tuiles 1', tileset, 0, 0);
+      layer.setCollisionByExclusion([-1]); // Toutes les tuiles sauf -1 ont une collision
+
+      // --- JOUEUR ---
+      this.player = this.physics.add.sprite(100, 450, 'player_fall').setDisplaySize(50, 50);
+      this.player.setCollideWorldBounds(true); // Empêche de sortir de la fenêtre
+      this.physics.add.collider(this.player, layer); // Collision sol / décor
+
+      this.createAnimations(); // Définit les animations du joueur
+      this.player.anims.play('idle');
+
+      this.playerHealth = 3; // Points de vie du joueur
+      this.cursors = this.input.keyboard.createCursorKeys(); // Touches directionnelles
+
+      // --- OBJECTIF DE FIN ---
+      this.goal = this.physics.add.staticImage(130, 113, 'goal');
+      this.goal.setTint(0x888888); // Grisé tant qu’il est verrouillé
+      this.goal.locked = true;
+      this.physics.add.overlap(this.player, this.goal, this.victory, null, this);
+
+      // --- OBJETS À COLLECTER ---
+      this.totalStrawberries = 3;
+      this.collectedStrawberries = 0;
+
+      // Groupes statiques (ne bougent pas)
+      this.strawberrys = this.physics.add.staticGroup();
+      this.melons = this.physics.add.staticGroup();
+
+      // Placement des fraises
+      this.strawberrys.create(300, 550, 'strawberry').setDisplaySize(40, 40);
+      this.strawberrys.create(510, 280, 'strawberry').setDisplaySize(40, 40);
+      this.strawberrys.create(875, 450, 'strawberry').setDisplaySize(40, 40);
+
+      // Placement des melons
+      this.melons.create(750, 550, 'melon').setDisplaySize(40, 40);
+      this.melons.create(760, 260, 'melon').setDisplaySize(40, 40);
+
+      // --- ANIMATIONS DES OBJETS ---
+      this.anims.create({
+        key: 'strawberry_spin',
+        frames: this.anims.generateFrameNumbers('strawberry', { start: 0, end: 16 }),
+        frameRate: 8,
+        repeat: -1
+      });
+
+      this.anims.create({
+        key: 'melon_spin',
+        frames: this.anims.generateFrameNumbers('melon', { start: 0, end: 16 }),
+        frameRate: 8,
+        repeat: -1
+      });
+
+      // Lance l’animation pour chaque objet
+       // `.iterate()` : parcourt chaque élément du groupe pour appliquer une action (comme une boucle for)
+      this.strawberrys.children.iterate(obj => obj.play('strawberry_spin'));
+      this.melons.children.iterate(obj => obj.play('melon_spin'));
+
+      // Détection de collisions avec les objets
+      this.physics.add.overlap(this.player, this.strawberrys, this.collectStrawberry, null, this);
+      this.physics.add.overlap(this.player, this.melons, this.collectMelon, null, this);
+
+      // --- ENNEMI THWOMP ---
+      this.createEnemies(layer);
+
+      // --- OBSTACLES (pics) ---
+      this.spikes = this.physics.add.staticGroup();
+      this.spikes.create(300, 560, 'spike').setDisplaySize(32, 32).setSize(32, 16).setOffset(-8, 8);
+      this.spikes.create(500, 560, 'spike').setDisplaySize(32, 32).setSize(32, 16).setOffset(-8, 8);
+
+      this.physics.add.collider(this.player, this.spikes, this.hitSpike, null, this);
+
+      // --- HUD (affichage de la vie et du temps) ---
+      this.lifeText = this.add.text(25, 25, `Vie: ${this.playerHealth}`, {
+        fontFamily: 'customFont',
+        fontSize: '30px',
+        color: '#ffffff'
+      });
+
+      this.elapsedTime = 0;
+      this.timerText = this.add.text(800, 25, "Temps: 0", {
+        fontFamily: 'customFont',
+        fontSize: '30px',
+        color: '#ffffff'
+      });
+
+      // Compteur de temps
+      // `callback` = fonction appelée automatiquement à chaque intervalle (ici chaque seconde)
+      this.timerEvent = this.time.addEvent({
+        delay: 1000, // 1 seconde
+        callback: () => {
+          this.elapsedTime++;
+          this.timerText.setText("Temps: " + this.elapsedTime);
+        },
+        loop: true
+      });
+    }
+
+    update() {
+      const onGround = this.player.body.blocked.down; // Le joueur touche le sol ?
+
+      // --- DÉPLACEMENT ---
+      if (this.cursors.left.isDown) {
+        this.player.setVelocityX(-160);
+        this.player.setFlipX(true);
+        if (onGround) this.player.play('run', true);
+      } else if (this.cursors.right.isDown) {
+        this.player.setVelocityX(160);
+        this.player.setFlipX(false);
+        if (onGround) this.player.play('run', true);
+      } else {
+        this.player.setVelocityX(0);
+        if (onGround) this.player.play('idle', true);
+      }
+
+      // --- SAUT ---
+      if (this.cursors.up.isDown && onGround) {
+        this.player.setVelocityY(-330);
+        this.player.setTexture('player_jump');
+      }
+
+      // --- CHUTE ---
+      if (!onGround) {
+        this.player.setTexture(this.player.body.velocity.y < 0 ? 'player_jump' : 'player_fall');
+      }
+
+      // --- LOGIQUE DES ENNEMIS ---
+      this.updateEnemies();
+
+      // --- VÉRIFIE SI LE JOUEUR EST MORT ---
+      if (this.playerHealth <= 0) this.gameOver();
+    }
+
+    // --- ANIMATIONS DU JOUEUR ---
+    createAnimations() {
+      this.anims.create({
+        key: 'idle',
+        frames: this.anims.generateFrameNumbers('player_idle', { start: 0, end: 10 }),
+        frameRate: 12,
+        repeat: -1
+      });
+
+      this.anims.create({
+        key: 'run',
+        frames: this.anims.generateFrameNumbers('player_run', { start: 0, end: 11 }),
+        frameRate: 12,
+        repeat: -1
+      });
+    }
+
+    // --- ENNEMIS : CRÉATION ET MISE À JOUR ---
+    createEnemies(layer) {
+      this.enemies = this.physics.add.group();
+
+      // Création d’un Thwomp
+      const thwomp = this.enemies.create(400, 357, 'thwomp_idle').setDisplaySize(50, 50);
+      thwomp.body.allowGravity = false;
+      thwomp.startY = thwomp.y;             // Position de départ
+      thwomp.targetY = thwomp.y + 200;      // Jusqu’où il descend
+      thwomp.state = 'idle';                // Son état actuel
+      thwomp.waitTimer = 0;                 // Timer interne
+
+      this.physics.add.collider(this.enemies, layer);
+      this.physics.add.overlap(this.player, this.enemies, this.hitSpike, null, this);
+
+      // Animations du Thwomp
+      this.anims.create({
+        key: 'thwomp_blink',
+        frames: this.anims.generateFrameNumbers('thwomp_blink', { start: 0, end: 3 }),
+        frameRate: 8,
+        repeat: 0
+      });
+
+      this.anims.create({
+        key: 'thwomp_impact',
+        frames: this.anims.generateFrameNumbers('thwomp_impact', { start: 0, end: 3 }),
+        frameRate: 8,
+        repeat: 0
+      });
+    }
+
+    updateEnemies() {
+      this.enemies.children.iterate(thwomp => {
+        if (!thwomp) return;
+
+        switch (thwomp.state) {
+          case 'idle':
+            thwomp.setTexture('thwomp_idle');
+
+            // Blink occasionnel (animation des yeux)
+            if (Phaser.Math.Between(0, 100) < 2 && !thwomp.anims.isPlaying) {
+              thwomp.play('thwomp_blink');
+            }
+
+            // Après un temps d’attente, il tombe
+            thwomp.waitTimer += this.game.loop.delta;
+            if (thwomp.waitTimer > 2500) {
+              thwomp.waitTimer = 0;
+              thwomp.state = 'falling';
+              thwomp.body.allowGravity = true;
+              thwomp.setVelocityY(600);
+            }
+            break;
+
+          case 'falling':
+            // Si le Thwomp touche le sol
+            if (thwomp.body.blocked.down) {
+              thwomp.state = 'impact';
+              thwomp.body.allowGravity = false;
+              thwomp.setVelocityY(0);
+              thwomp.play('thwomp_impact');
+
+              // Petit effet de secousse
+              this.cameras.main.shake(100, 0.01);
+
+              // Effet visuel d’écrasement
+              this.tweens.add({
+                targets: thwomp,
+                scaleY: 0.8,
+                scaleX: 1.1,
+                duration: 100,
+                yoyo: true
+              });
+
+              // Attente avant la remontée
+              this.time.delayedCall(1000, () => {
+                thwomp.state = 'rising';
+              });
+            }
+            break;
+
+          case 'rising':
+            thwomp.y -= 3; // vitesse de remontée
+            if (thwomp.y <= thwomp.startY) {
+              thwomp.y = thwomp.startY;
+              thwomp.setTexture('thwomp_idle');
+              thwomp.state = 'idle';
+            }
+            break;
+        }
+      });
+    }
+
+    // --- COLLECTE D’OBJETS ---
+    collectStrawberry(player, strawberry) {
+      strawberry.disableBody(true, true);
+      this.collectedStrawberries++;
+
+      // Quand toutes les fraises sont ramassées → déverrouille la porte
+      if (this.collectedStrawberries >= this.totalStrawberries) {
+        this.goal.clearTint();
+        this.goal.locked = false;
+      }
+    }
+
+    collectMelon(player, melon) {
+      melon.disableBody(true, true);
+      // Récupère de la vie (max 5)
+      this.playerHealth = Phaser.Math.Clamp(this.playerHealth + 1, 0, 5);
+      this.lifeText.setText(`Vie: ${this.playerHealth}`);
+    }
+
+    // --- DOMMAGES / MORT ---
+    hitSpike() {
+      if (this.player.isInvincible) return; // Empêche de perdre plusieurs vies d’un coup
+
+      this.playerHealth = Phaser.Math.Clamp(this.playerHealth - 1, 0, 5);
+      this.lifeText.setText(`Vie: ${this.playerHealth}`);
+
+      // Effet de blessure
+      this.player.setTint(0xff0000);
+      this.player.isInvincible = true;
+
+      // Après 1s → supprime le tint et réactive les dégâts
+      this.time.delayedCall(1000, () => {
+        this.player.clearTint();
+        this.player.isInvincible = false;
+      });
+    }
+
+    // --- FIN DU JEU ---
+    gameOver() {
+      this.physics.pause();
+      this.timerEvent.paused = true;
+      this.showEndScreen("Game Over !");
+    }
+
+    victory() {
+      this.physics.pause();
+      this.timerEvent.paused = true;
+      this.showEndScreen("Victoire !");
+    }
+
+    // --- ÉCRAN DE FIN ---
+    showEndScreen(message) {
+      this.add.text(this.scale.width / 2, this.scale.height / 2 - 50, message, {
+        font: "40px customFont",
+        fill: "#ffffff",
+        backgroundColor: "#87CEEB"
+      }).setOrigin(0.5);
+
+      this.add.text(this.scale.width / 2, this.scale.height / 2 - 10, "Temps: " + this.elapsedTime + "s", {
+        fontFamily: 'customFont',
+        fontSize: '28px',
+        color: '#ffffff'
+      }).setOrigin(0.5);
+
+      // `.setInteractive()` permet de cliquer sur le texte
+      const restartText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 50, "Recommencer", {
+        fontFamily: 'customFont',
+        fontSize: '30px',
+        fill: "#ff0000",
+        backgroundColor: "#ffffff"
+      }).setOrigin(0.5).setPadding(10).setInteractive();
+
+      // `.on('pointerdown', ...)` : événement déclenché quand on clique
+      restartText.on("pointerdown", () => {
+        this.scene.restart(); // Redémarre la scène
+      });
+    }
+  }
+
+  // --- CONFIGURATION DU JEU ---
+  const config = {
+    type: Phaser.AUTO,           // AUTO = utilise WebGL si possible, sinon Canvas
+    width: 960,
+    height: 640,
+    backgroundColor: "#87CEEB",
+    physics: {
+      default: "arcade",
+      arcade: {
+        gravity: { y: 500 },
+        debug: false // Met à true pour voir les hitbox
+      }
+    },
+    scene: [DemoScene]
+  };
+
+  // --- LANCEMENT DU JEU ---
+  new Phaser.Game(config);
+</script>
+</body>
+</html>

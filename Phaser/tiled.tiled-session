@@ -1,0 +1,65 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 167.33333333333331,
+                "y": 123.33333333333331
+            }
+        },
+        "map.tmx#tileset": {
+            "scaleInDock": 1
+        },
+        "t1.tmx": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 92.5,
+                "y": 313
+            }
+        },
+        "t1.tmx#terrain": {
+            "scaleInDock": 1
+        },
+        "terrain.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.exportedFilePath": "C:/Users/laco0044/Desktop/Depot/CESI-RIA/Jour2",
+    "last.imagePath": "C:/Users/laco0044/Desktop/Depot/CESI-RIA/Jour2/assets/Terrain",
+    "map.height": 40,
+    "map.lastUsedExportFilter": "Tous les Fichiers (*)",
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 60,
+    "openFiles": [
+        "map.tmx"
+    ],
+    "project": "tiled.tiled-project",
+    "recentFiles": [
+        "map.tmx",
+        "terrain.tsx",
+        "t1.tmx"
+    ],
+    "tileset.embedInMap": true,
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
