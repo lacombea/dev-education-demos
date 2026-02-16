@@ -1,0 +1,75 @@
+#################################################
+#                GODOT
+#################################################
+
+# Import cache (généré automatiquement)
+**/.godot/
+**/.import/
+
+# Fichiers exportés
+**/export.cfg
+**/export_presets.cfg
+
+# Mono / C#
+**/.mono/
+**/data_*/
+
+# Fichiers temporaires
+**/*.translation
+
+# Crash logs
+**/crash.log
+
+#################################################
+#                UNITY
+#################################################
+
+# Dossiers générés
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Mm]emoryCaptures/
+
+# Visual Studio / Rider
+**/*.csproj
+**/*.unityproj
+**/*.sln
+**/*.suo
+**/*.tmp
+**/*.user
+**/*.userprefs
+**/*.pidb
+**/*.booproj
+**/*.svd
+**/*.pdb
+**/*.mdb
+**/*.opendb
+**/*.VC.db
+
+# JetBrains Rider
+**/.idea/
+
+# Gradle
+**/.gradle/
+
+# Android
+**/*.apk
+**/*.aab
+
+#################################################
+#                SYSTEM
+#################################################
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
