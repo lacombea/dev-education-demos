@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://cbs04vdwdtegc"]
+
+[ext_resource type="Script" uid="uid://c5dn3adr6l03o" path="res://pipe.gd" id="1_78010"]
+[ext_resource type="Texture2D" uid="uid://d0fgxwk2vljeu" path="res://assets/PNG/rockGrass.png" id="2_78010"]
+
+[sub_resource type="ConvexPolygonShape2D" id="ConvexPolygonShape2D_arayy"]
+points = PackedVector2Array(11.5, -118.75, 53.5, 117.75, -53, 116.25)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_78010"]
+size = Vector2(100, 200)
+
+[node name="Pipe" type="Node2D" unique_id=1958582417]
+script = ExtResource("1_78010")
+
+[node name="TopPipe" type="Area2D" parent="." unique_id=1932729060]
+position = Vector2(21, 20)
+rotation = 3.1415927
+scale = Vector2(2, 2)
+
+[node name="Sprite2D" type="Sprite2D" parent="TopPipe" unique_id=1588504186]
+texture = ExtResource("2_78010")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopPipe" unique_id=573150095]
+position = Vector2(0, 0.25)
+shape = SubResource("ConvexPolygonShape2D_arayy")
+
+[node name="BottomPipe" type="Area2D" parent="." unique_id=1494742672]
+position = Vector2(-23, 697)
+scale = Vector2(2, 2)
+
+[node name="Sprite2D" type="Sprite2D" parent="BottomPipe" unique_id=1623794557]
+texture = ExtResource("2_78010")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BottomPipe" unique_id=1604757067]
+position = Vector2(0, 0.25)
+shape = SubResource("ConvexPolygonShape2D_arayy")
+
+[node name="ScoreZone" type="Area2D" parent="." unique_id=921492075]
+position = Vector2(38, 360)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ScoreZone" unique_id=460978786]
+shape = SubResource("RectangleShape2D_78010")
+
+[connection signal="body_entered" from="TopPipe" to="." method="_on_pipe_body_entered"]
+[connection signal="body_entered" from="BottomPipe" to="." method="_on_pipe_body_entered"]
+[connection signal="body_entered" from="ScoreZone" to="." method="_on_score_zone_body_entered"]

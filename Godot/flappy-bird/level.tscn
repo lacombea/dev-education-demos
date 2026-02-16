@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://xk7gjh3bmorp"]
+
+[ext_resource type="PackedScene" uid="uid://djecfjb5wt7sf" path="res://bird.tscn" id="1_u52ul"]
+[ext_resource type="Script" uid="uid://41fa2da0ehd1" path="res://main.gd" id="1_vonw3"]
+[ext_resource type="PackedScene" uid="uid://cbs04vdwdtegc" path="res://pipe.tscn" id="2_oi3di"]
+
+[node name="Level" type="Node2D" unique_id=690785699]
+script = ExtResource("1_vonw3")
+pipe_scene = ExtResource("2_oi3di")
+
+[node name="Bird" parent="." unique_id=1506494143 instance=ExtResource("1_u52ul")]
+position = Vector2(540, 360)
+
+[node name="Timer" type="Timer" parent="." unique_id=1520885594]
+wait_time = 3.0
+autostart = true
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=1052207381]
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 35
+text = "Score : "
+
+[node name="GameOverLabel" type="Label" parent="." unique_id=1142427532]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 540.0
+offset_top = 360.0
+offset_right = 661.0
+offset_bottom = 409.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 35
+text = "Game Over"
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
